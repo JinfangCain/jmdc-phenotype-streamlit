@@ -8,8 +8,8 @@ from huggingface_hub import hf_hub_download
 from predict_phenotype import JMDCPhenotype
 
 st.set_page_config(page_title="Predictive Risk Phenotypes for T2D", page_icon="🩺", layout="centered")
-st.title("🩺 Predictive Risk Phenotypes for T2D")
-st.caption("Predictive phenotypes using JMDC health checkup data")
+st.title("🩺 Your T2D Risk Phenotypes")
+st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
 
 # --- CONFIG: choose how to load the model ---
 # default to "local" so it uses the committed .joblib; override in Secrets if you move to HF
