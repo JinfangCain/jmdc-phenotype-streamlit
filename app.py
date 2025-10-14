@@ -139,16 +139,30 @@ if uploaded:
         # 6) Predict
         with st.spinner("Predicting…"):
             preds = model.predict_batch(df_in)
-        out_df = pd.concat([df.reset_index(drop=True), preds], axis=1)
 
-        # 7) Show & let users download
+        # --- NEW: hide internal columns from UI/CSV ---
+        cols_to_drop = [
+            "membership_probs",
+            "membership_probs_raw",
+            "membership_probs_by_order",
+            "raw_cluster_id",
+        ]
+        preds_public = preds.drop(columns=cols_to_drop, errors="ignore")
+
+        out_df_public = pd.concat([df.reset_index(drop=True), preds_public], axis=1)
+
+        # 7) Show & let users download (public columns only)
         st.success("Prediction complete.")
-        st.dataframe(out_df.head(20), use_container_width=True)
+        st.dataframe(out_df_public.head(20), use_container_width=True)
 
         buf = io.StringIO()
-        out_df.to_csv(buf, index=False)
-        st.download_button("Download results as CSV", buf.getvalue(),
-                           file_name="phenotype_predictions.csv", mime="text/csv")
+        out_df_public.to_csv(buf, index=False)
+        st.download_button(
+            "Download results as CSV",
+            buf.getvalue(),
+            file_name="phenotype_predictions.csv",
+            mime="text/csv",
+        )
 
 st.caption("⚠️ For research/education. Not a standalone diagnostic.")
 
