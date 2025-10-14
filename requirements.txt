@@ -1,0 +1,8 @@
+streamlit==1.38.0
+numpy
+pandas
+scikit-learn
+scipy
+joblib
+lime
+huggingface_hub   # keep even if commit the model, safe to have
