@@ -34,13 +34,14 @@ model = load_model()
 feature_names = model.feature_names  # must be: ['Systolic_BP','Diastolic_BP','BMI','Triglycerides','HDL_Cholesterol','LDL_Cholesterol','AST(GOT)','ALT(GPT)','Gamma_GTP','eGFR','Age','Sex']
 
 # ----------------------- Single patient form -----------------------
+# ----------------------- Single patient form -----------------------
 st.subheader("Single patient")
 
-# sensible defaults (edit to match your cohort)
+# defaults (one decimal place)
 defaults = {
     "Systolic_BP": 122.0,         # mmHg
     "Diastolic_BP": 78.0,         # mmHg
-    "BMI": 24.5,                  # kg/m²
+    "BMI": 24.5,                  # kg/m² (auto-computed from weight/height)
     "Triglycerides": 140.0,       # mg/dL
     "HDL_Cholesterol": 55.0,      # mg/dL
     "LDL_Cholesterol": 125.0,     # mg/dL
@@ -49,39 +50,71 @@ defaults = {
     "Gamma_GTP": 35.0,            # U/L (shown as GGT)
     "eGFR": 85.0,                 # mL/min/1.73m²
     "Age": 45.0,                  # years
-    "Sex": 1,                     # 1=Male, 0=Female
+    "Sex": 0,                     # 0=Male, 1=Female (matches radio mapping below)
 }
 
 with st.form("single"):
     c1, c2, c3 = st.columns(3)
     vals = {}
 
+    # --- NEW: add anthropometrics for BMI compute ---
     with c1:
-        vals["Systolic_BP"]   = st.number_input("Systolic BP (mmHg)",  70.0, 250.0, float(defaults["Systolic_BP"]))
-        vals["BMI"]           = st.number_input("BMI (kg/m²)",         12.0, 60.0,  float(defaults["BMI"]))
-        vals["HDL_Cholesterol"]= st.number_input("HDL-C (mg/dL)",      10.0, 120.0, float(defaults["HDL_Cholesterol"]))
-        vals["AST(GOT)"]      = st.number_input("AST (GOT) (U/L)",      5.0, 300.0, float(defaults["AST(GOT)"]))
+        # Weight & Height with 0.1 step and one-decimal format
+        weight_kg = st.number_input("Weight (kg)", min_value=20.0, max_value=300.0,
+                                    value=70.0, step=0.1, format="%.1f")
+        height_m  = st.number_input("Height (m)",  min_value=1.00, max_value=2.50,
+                                    value=1.70, step=0.01, format="%.2f")
+
+        # Auto-compute BMI if possible, else fall back to default
+        if height_m and height_m > 0 and weight_kg and weight_kg > 0:
+            bmi_calc = round(weight_kg / (height_m ** 2), 1)
+        else:
+            bmi_calc = round(defaults["BMI"], 1)
+
+        # BMI field kept but disabled (auto-updated)
+        vals["BMI"] = st.number_input("BMI (kg/m²)",
+                                      min_value=12.0, max_value=60.0,
+                                      value=float(bmi_calc), step=0.1, format="%.1f",
+                                      disabled=True)
+
+        # Other inputs in col 1
+        vals["Systolic_BP"]    = st.number_input("Systolic BP (mmHg)",  min_value=70.0,  max_value=250.0,
+                                                 value=float(round(defaults["Systolic_BP"], 1)), step=0.1, format="%.1f")
+        vals["HDL_Cholesterol"]= st.number_input("HDL-C (mg/dL)",       min_value=10.0,  max_value=120.0,
+                                                 value=float(round(defaults["HDL_Cholesterol"], 1)), step=0.1, format="%.1f")
+        vals["AST(GOT)"]       = st.number_input("AST (GOT) (U/L)",     min_value=5.0,   max_value=300.0,
+                                                 value=float(round(defaults["AST(GOT)"], 1)), step=0.1, format="%.1f")
 
     with c2:
-        vals["Diastolic_BP"]  = st.number_input("Diastolic BP (mmHg)", 40.0, 150.0, float(defaults["Diastolic_BP"]))
-        vals["Triglycerides"] = st.number_input("Triglycerides (mg/dL)", 30.0, 800.0, float(defaults["Triglycerides"]))
-        vals["LDL_Cholesterol"]= st.number_input("LDL-C (mg/dL)",      40.0, 300.0, float(defaults["LDL_Cholesterol"]))
-        vals["ALT(GPT)"]      = st.number_input("ALT (GPT) (U/L)",      5.0, 300.0, float(defaults["ALT(GPT)"]))
+        vals["Diastolic_BP"]   = st.number_input("Diastolic BP (mmHg)", min_value=40.0,  max_value=150.0,
+                                                 value=float(round(defaults["Diastolic_BP"], 1)), step=0.1, format="%.1f")
+        vals["Triglycerides"]  = st.number_input("Triglycerides (mg/dL)", min_value=30.0, max_value=800.0,
+                                                 value=float(round(defaults["Triglycerides"], 1)), step=0.1, format="%.1f")
+        vals["LDL_Cholesterol"]= st.number_input("LDL-C (mg/dL)",       min_value=40.0,  max_value=300.0,
+                                                 value=float(round(defaults["LDL_Cholesterol"], 1)), step=0.1, format="%.1f")
+        vals["ALT(GPT)"]       = st.number_input("ALT (GPT) (U/L)",     min_value=5.0,   max_value=300.0,
+                                                 value=float(round(defaults["ALT(GPT)"], 1)), step=0.1, format="%.1f")
 
     with c3:
-        # show GGT label but store in Gamma_GTP
-        ggt_ui = st.number_input("GGT (U/L)", 5.0, 600.0, float(defaults["Gamma_GTP"]))
-        vals["Gamma_GTP"]     = ggt_ui
-        vals["eGFR"]          = st.number_input("eGFR (mL/min/1.73m²)", 5.0, 150.0, float(defaults["eGFR"]))
-        vals["Age"]           = st.number_input("Age (years)", 18.0, 100.0, float(defaults["Age"]))
+        ggt_ui = st.number_input("GGT (U/L)", min_value=5.0, max_value=600.0,
+                                 value=float(round(defaults["Gamma_GTP"], 1)), step=0.1, format="%.1f")
+        vals["Gamma_GTP"]      = ggt_ui
+        vals["eGFR"]           = st.number_input("eGFR (mL/min/1.73m²)", min_value=5.0, max_value=150.0,
+                                                 value=float(round(defaults["eGFR"], 1)), step=0.1, format="%.1f")
+        vals["Age"]            = st.number_input("Age (years)", min_value=18.0, max_value=100.0,
+                                                 value=float(round(defaults["Age"], 1)), step=0.1, format="%.1f")
         sex_ui = st.radio("Sex", options=["Male", "Female"], index=0, horizontal=True)
-        vals["Sex"] = 0 if sex_ui == "Male" else 1  # map Male/Female -> 0/1
+        vals["Sex"] = 0 if sex_ui == "Male" else 1  # 0=Male, 1=Female
 
     submitted = st.form_submit_button("Predict")
     if submitted:
-        # Make sure we pass exactly the columns in the correct order expected by the model
+        # Ensure BMI reflects the latest auto-compute
+        vals["BMI"] = bmi_calc
+
+        # Pass exactly the columns in the order the model expects
         ordered_vals = {k: vals[k] for k in feature_names}
         out = model.predict(ordered_vals)
+
         st.success(f"Phenotype: **{out['phenotype_name']}**")
         st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
         with st.expander("Details"):
