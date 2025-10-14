@@ -15,10 +15,9 @@ st.set_page_config(
 # --- Button theming (affects all primary buttons) ---
 st.markdown("""
 <style>
-/* Bigger, bolder primary buttons with a modern grey theme */
 div.stButton > button[kind="primary"] {
-    background: linear-gradient(90deg, #6b7280, #9ca3af);  /* grey gradient */
-    color: white;
+    background: linear-gradient(90deg, #6b7280, #9ca3af) !important;
+    color: white !important;
     border: none;
     padding: 0.85rem 1.25rem;
     border-radius: 12px;
@@ -28,7 +27,7 @@ div.stButton > button[kind="primary"] {
     transition: all 0.15s ease-in-out;
 }
 div.stButton > button[kind="primary"]:hover {
-    background: linear-gradient(90deg, #4b5563, #6b7280);  /* darker on hover */
+    background: linear-gradient(90deg, #4b5563, #6b7280) !important;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
