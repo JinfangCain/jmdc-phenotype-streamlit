@@ -88,22 +88,61 @@ with st.form("single"):
             st.json(out)
 
 st.divider()
-
+        
 # ----------------------- Batch prediction -----------------------
 st.subheader("Batch prediction (CSV)")
-st.write("CSV must include the exact headers (in any order):")
-st.code(", ".join(feature_names), language="text")
+st.write("CSV must include the exact headers (in any order). You may use **GGT** or **Gamma_GTP**:")
+display_names = ["GGT" if f == "Gamma_GTP" else f for f in feature_names]
+st.code(", ".join(display_names), language="text")
 
 uploaded = st.file_uploader("Upload CSV", type=["csv"])
 if uploaded:
     df = pd.read_csv(uploaded)
+
+    # 1) Normalize column names (strip spaces; keep original for message)
+    original_cols = df.columns.tolist()
+    df.columns = [c.strip() for c in df.columns]
+
+    # 2) Accept either "GGT" or "Gamma_GTP" (case-insensitive)
+    cols_lower = {c.lower(): c for c in df.columns}
+    if ("ggt" in cols_lower) and ("gamma_gtp" not in {k.replace(" ", "_") for k in cols_lower}):
+        # Rename GGT -> Gamma_GTP
+        df = df.rename(columns={cols_lower["ggt"]: "Gamma_GTP"})
+
+    # 3) Optional: handle Sex as text ("Male"/"Female") -> 0/1
+    if "Sex" in df.columns and df["Sex"].dtype == object:
+        df["Sex"] = df["Sex"].astype(str).str.strip().str.lower().map(
+            {"male": 0, "m": 0, "female": 1, "f": 1}
+        ).fillna(df["Sex"])  # leave numeric values untouched if present
+        # if anything still non-numeric, try to coerce
+        df["Sex"] = pd.to_numeric(df["Sex"], errors="coerce")
+
+    # 4) Validate required columns
     missing = [c for c in feature_names if c not in df.columns]
     if missing:
-        st.error(f"Missing columns: {missing}")
+        # If we're missing Gamma_GTP but user had a column named GGT (not caught), tell them
+        if "Gamma_GTP" in missing and any(c.lower() == "ggt" for c in original_cols):
+            st.error("Could not map 'GGT' to 'Gamma_GTP'. Please ensure your header is exactly 'GGT' or 'Gamma_GTP'.")
+        else:
+            st.error(f"Missing columns: {missing}")
     else:
+        # 5) Coerce types (best effort) and reorder columns
+        for c in feature_names:
+            if c != "Sex":
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+        # Sex must be 0/1; if still NaN after mapping, warn
+        if df["Sex"].isna().any():
+            st.warning("Some 'Sex' values are not recognized (use 0/1 or Male/Female). Unrecognized rows will appear as NaN.")
+
+        df_in = df[feature_names].copy()
+
+        # 6) Predict
         with st.spinner("Predicting…"):
-            preds = model.predict_batch(df[feature_names])
+            preds = model.predict_batch(df_in)
         out_df = pd.concat([df.reset_index(drop=True), preds], axis=1)
+
+        # 7) Show & let users download
+        st.success("Prediction complete.")
         st.dataframe(out_df.head(20), use_container_width=True)
 
         buf = io.StringIO()
