@@ -9,7 +9,7 @@ from predict_phenotype import JMDCPhenotype
 
 st.set_page_config(page_title="Predictive Risk Phenotypes for T2D", page_icon="🩺", layout="centered")
 st.title("🩺 Predictive Risk Phenotypes for T2D")
-st.caption("JMDC LIME-based phenotypes + 5-year T2D risk")
+st.caption("Predictive phenotypes using JMDC health checkup data")
 
 # --- CONFIG: choose how to load the model ---
 LOAD_FROM = st.secrets.get("MODEL_SOURCE", "hf")  # "hf" or "local"
@@ -59,7 +59,7 @@ with st.form("single"):
     if submitted:
         out = model.predict(vals)
         st.success(f"Phenotype: **{out['phenotype_name']}**")
-        st.metric("Estimated 5-yr T2D risk", f"{out['t2d_risk']*100:.1f}%")
+        st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
         with st.expander("Details"):
             st.json(out)
 
