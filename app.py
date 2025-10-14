@@ -15,21 +15,22 @@ st.set_page_config(
 # --- Button theming (affects all primary buttons) ---
 st.markdown("""
 <style>
-/* Bigger, bolder primary buttons with a subtle gradient */
+/* Bigger, bolder primary buttons with a modern grey theme */
 div.stButton > button[kind="primary"] {
-    background: linear-gradient(90deg, #2563eb, #22c55e);
+    background: linear-gradient(90deg, #6b7280, #9ca3af);  /* grey gradient */
     color: white;
-    border: 0;
+    border: none;
     padding: 0.85rem 1.25rem;
     border-radius: 12px;
     font-weight: 800;
     font-size: 1.15rem;
     letter-spacing: .3px;
+    transition: all 0.15s ease-in-out;
 }
 div.stButton > button[kind="primary"]:hover {
-    filter: brightness(1.05);
+    background: linear-gradient(90deg, #4b5563, #6b7280);  /* darker on hover */
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -37,12 +38,9 @@ div.stButton > button[kind="primary"]:hover {
 st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
 
-st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
-
 st.markdown("""
-An optimum machine learning model was trained to predict the **risk of developing Type 2 Diabetes (T2D)** using health-checkup data from **19,953 Japanese adults** and **12 routinely measured variables**.  
-These LIME-derived contribution profiles were clustered into **seven distinct predictive phenotypes**, each capturing a characteristic combination of metabolic traits and corresponding T2D risk.  
-For consistent and interpretable probability estimates, **logistic regression** was used to compute the final risk values, and clusters were **ordered by their mean predicted T2D probability**, forming a continuous, risk-ordered map of phenotypes.
+An optimum machine learning model was trained to predict the risk of developing Type 2 Diabetes (T2D) using health-checkup data from 19,953 Japanese adults and 12 routinely measured variables.  
+These LIME-derived contribution profiles were use to cinstruct seven distinct predictive phenotypes, each capturing a characteristic combination of metabolic traits and corresponding T2D risk.  
 """)
 
 # --- CONFIG: choose how to load the model ---
