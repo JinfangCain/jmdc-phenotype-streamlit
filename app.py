@@ -11,8 +11,39 @@ st.set_page_config(
     page_title="Predictive T2D Risk Phenotype", 
     page_icon="📊",   # try: "🩸", "📈", "🧪", "🏥", "🧬"
     layout="centered")
+
+# --- Button theming (affects all primary buttons) ---
+st.markdown("""
+<style>
+/* Bigger, bolder primary buttons with a subtle gradient */
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(90deg, #2563eb, #22c55e);
+    color: white;
+    border: 0;
+    padding: 0.85rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: .3px;
+}
+div.stButton > button[kind="primary"]:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
+
+st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
+
+st.markdown("""
+An optimum machine learning model was trained to predict the **risk of developing Type 2 Diabetes (T2D)** using health-checkup data from **19,953 Japanese adults** and **12 routinely measured variables**.  
+These LIME-derived contribution profiles were clustered into **seven distinct predictive phenotypes**, each capturing a characteristic combination of metabolic traits and corresponding T2D risk.  
+For consistent and interpretable probability estimates, **logistic regression** was used to compute the final risk values, and clusters were **ordered by their mean predicted T2D probability**, forming a continuous, risk-ordered map of phenotypes.
+""")
 
 # --- CONFIG: choose how to load the model ---
 # default to "local" so it uses the committed .joblib; override in Secrets if you move to HF
@@ -100,7 +131,10 @@ with st.form("single"):
     vals["Sex"] = 1 if sex_ui == "Male" else 0
     r5c3.markdown("&nbsp;", unsafe_allow_html=True)  # spacer to keep 3-column grid
 
-    submitted = st.form_submit_button("Predict")
+    row_btn_left, row_btn_center, row_btn_right = st.columns([1, 2, 1])
+    with row_btn_center:
+        submitted = st.form_submit_button("Predict", type="primary", use_container_width=True)
+
     if submitted:
         # ensure BMI reflects the latest auto-compute
         vals["BMI"] = bmi_calc
