@@ -1,7 +1,7 @@
 [theme]
-base="light"              # or "dark"
-primaryColor="#6b7280"    # grey
+base="light"
+primaryColor="#22c55e"             # healthy green
 backgroundColor="#FFFFFF"
-secondaryBackgroundColor="#F5F5F5"
-textColor="#000000"
+secondaryBackgroundColor="#F0FDF4" # very light green
+textColor="#064e3b"
 font="sans serif"
