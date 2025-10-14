@@ -8,10 +8,10 @@ from huggingface_hub import hf_hub_download
 from predict_phenotype import JMDCPhenotype
 
 st.set_page_config(
-    page_title="Predictive Risk Phenotype for T2D", 
+    page_title="Predictive T2D Risk Phenotype", 
     page_icon="📊",   # try: "🩸", "📈", "🧪", "🏥", "🧬"
     layout="centered")
-st.title("🩺 Your T2D Risk Phenotypes")
+st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive machine learning model.")
 
 # --- CONFIG: choose how to load the model ---
