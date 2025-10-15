@@ -11,7 +11,7 @@ from predict_phenotype import JMDCPhenotype
 # ----------------------------- Page config -----------------------------
 st.set_page_config(
     page_title="Predictive T2D Risk Phenotype",
-    page_icon="📊",   # alternatives: "🩸", "📈", "🧪", "🏥", "🧬"
+    page_icon="📊",
     layout="centered"
 )
 
@@ -38,7 +38,7 @@ button[kind="primary"]:hover,
 button[data-testid="baseButton-primary"]:hover,
 button[data-testid="baseButton-primaryFormSubmit"]:hover,
 div.stButton > button:hover,
-form button[type="submit"]:hover {
+form button[type="submit"] :hover{
     background: linear-gradient(90deg, #4b5563, #6b7280) !important;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0,0,0,0.15);
@@ -76,49 +76,35 @@ def load_model():
     return JMDCPhenotype(bundle_path)
 
 model = load_model()
-feature_names = model.feature_names  # ['Systolic_BP','Diastolic_BP','BMI','Triglycerides','HDL_Cholesterol','LDL_Cholesterol','AST(GOT)','ALT(GPT)','Gamma_GTP','eGFR','Age','Sex']
+feature_names = model.feature_names  # expected: ['Systolic_BP','Diastolic_BP','BMI','Triglycerides','HDL_Cholesterol','LDL_Cholesterol','AST(GOT)','ALT(GPT)','Gamma_GTP','eGFR','Age','Sex']
 
-# Try to fetch phenotype names and mean risks from the bundle
+# ----------------------------- Bundle metadata -----------------------------
+# Phenotype names (ordered by risk)
 phenotype_names = getattr(model, "names_by_order", None)
 if phenotype_names is None and hasattr(model, "B"):
     phenotype_names = model.B.get("phenotype_names_by_order", None)
 if phenotype_names is None:
     phenotype_names = [f"P{i+1}" for i in range(7)]
 
-mean_risks_by_order = None
-for k in [
+# Ordered mean risks for each phenotype
+# Prefer the new key you provided: "cluster_mean_risks"
+ordered_mean_risks = None
+preferred_keys = [
+    "cluster_mean_risks",                # <-- your bundle
     "mean_risks_by_order",
     "cluster_mean_risks_by_order",
     "mean_cluster_risks_by_order",
     "phenotype_mean_risks_by_order",
-]:
+]
+for k in preferred_keys:
     if hasattr(model, k):
-        mean_risks_by_order = getattr(model, k)
+        ordered_mean_risks = getattr(model, k)
         break
     if hasattr(model, "B") and isinstance(model.B, dict) and k in model.B:
-        mean_risks_by_order = model.B[k]
+        ordered_mean_risks = model.B[k]
         break
-
-# Label sets for the phenotype bar
-full_names = phenotype_names or [
-    "P1: Young Low-BMI",
-    "P2: Mid-Aged Low-BMI",
-    "P3: Older Low-BMI",
-    "P4: Young Hepatic-Metabo",
-    "P5: Older Hepatic-Hypertensive",
-    "P6: Older Metabo",
-    "P7: Older Hepatic-Metabo",
-]
-short_names = [
-    "P1: Young Lean",
-    "P2: Mid Lean",
-    "P3: Older Lean",
-    "P4: Young Hep-Met",
-    "P5: Older Hep-HTN",
-    "P6: Older Metab",
-    "P7: Older Hep-Met",
-]
-mini_names = ["P1 YL", "P2 ML", "P3 OL", "P4 Y-HM", "P5 O-HH", "P6 OM", "P7 O-HM"]
+if ordered_mean_risks is None:
+    ordered_mean_risks = [np.nan] * len(phenotype_names)
 
 # ----------------------- Single patient form -----------------------
 st.subheader("Your Risk Profile")
@@ -197,50 +183,49 @@ with st.form("single"):
         st.success(f"Phenotype: **{out['phenotype_name']}**")
         st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
 
-        # Label length selector
-        label_mode = st.radio(
-            "Bar labels", ["Short", "Full", "Ultra-compact"],
-            index=0, horizontal=True
-        )
-        if label_mode == "Full":
-            names_to_plot = full_names
-        elif label_mode == "Ultra-compact":
-            names_to_plot = mini_names
-        else:
-            names_to_plot = short_names
-
-        # --- Phenotype bar (7 segments, highlight selection) ---
+        # --- Phenotype bar (7 segments, show risks & names) ---
         sel_idx = int(out.get("phenotype_ordered_label", 0))
-        risks = np.array(mean_risks_by_order) if mean_risks_by_order is not None else np.array([np.nan]*len(names_to_plot))
+        risks = np.array(ordered_mean_risks, dtype=float)
+        names = phenotype_names
 
-        n = len(names_to_plot)
-        widths = [1]*n
+        n = len(names)
+        widths = [1] * n
         from itertools import cycle, islice
         palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
         palette = list(islice(cycle(palette_base), n))
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
 
-        fig, ax = plt.subplots(figsize=(9, 1.4))
-        left = 0
+        fig, ax = plt.subplots(figsize=(9, 2.4))
+        left = 0.0
+        centers = []
         for i in range(n):
             ax.barh(
                 y=0, width=widths[i], left=left,
                 color=palette[i], alpha=alphas[i], edgecolor="white", height=0.9
             )
-            # Only the selected segment shows the mean risk (if available)
-            if i == sel_idx and not np.isnan(risks[i]):
-                label = f"{names_to_plot[i]}\n{risks[i]*100:.2f}%"
-            else:
-                label = names_to_plot[i]
-            ax.text(
-                left + widths[i]/2, 0, label,
-                ha="center", va="center",
-                fontsize=10, color="white", weight="bold", linespacing=1.2
-            )
+            centers.append(left + widths[i] / 2.0)
+            # Show mean risk inside each segment (white text)
+            if not np.isnan(risks[i]):
+                ax.text(
+                    left + widths[i] / 2.0, 0,
+                    f"{risks[i]*100:.2f}%",
+                    ha="center", va="center",
+                    fontsize=10, color="white", weight="bold"
+                )
             left += widths[i]
+
+        # Name labels under the bar, rotated 45°
         ax.set_xlim(0, sum(widths))
-        ax.set_ylim(-0.6, 0.6)
-        ax.axis("off")
+        ax.set_ylim(-0.9, 0.9)
+        ax.set_yticks([])  # hide y tick
+        ax.set_xticks(centers)
+        ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
+
+        # Clean spines (keep bottom for tick labels)
+        for spine in ["top", "left", "right"]:
+            ax.spines[spine].set_visible(False)
+        ax.spines["bottom"].set_alpha(0.25)
+
         st.pyplot(fig)
 
         with st.expander("Details"):
