@@ -191,37 +191,49 @@ with st.form("single"):
         n = len(names)
         widths = [1] * n
         from itertools import cycle, islice
+
+        # Vibrant palette (we’ll only use the selected color from here)
         palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
         palette = list(islice(cycle(palette_base), n))
-        alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
 
-        fig, ax = plt.subplots(figsize=(9, 2.4))
+        # Colors: selected = vivid; others = light gray
+        selected_color = palette[sel_idx]
+        faded_bar_color = "#d1d5db"   # Tailwind gray-300
+        faded_text_color = "#111827"  # Tailwind gray-900 for contrast on gray
+        selected_text_color = "#ffffff"
+
+        fig, ax = plt.subplots(figsize=(9, 2.6))
         left = 0.0
         centers = []
         for i in range(n):
+            bar_color = selected_color if i == sel_idx else faded_bar_color
+            txt_color = selected_text_color if i == sel_idx else faded_text_color
+
             ax.barh(
                 y=0, width=widths[i], left=left,
-                color=palette[i], alpha=alphas[i], edgecolor="white", height=0.9
+                color=bar_color, edgecolor="white", linewidth=1.0, height=0.9
             )
             centers.append(left + widths[i] / 2.0)
-            # Show mean risk inside each segment (white text)
+
+            # Mean risk inside every segment (always printed)
             if not np.isnan(risks[i]):
                 ax.text(
                     left + widths[i] / 2.0, 0,
                     f"{risks[i]*100:.2f}%",
                     ha="center", va="center",
-                    fontsize=10, color="white", weight="bold"
+                    fontsize=10, color=txt_color, weight="bold"
                 )
+
             left += widths[i]
 
-        # Name labels under the bar, rotated 45°
+        # Phenotype names under the bar, rotated 45°
         ax.set_xlim(0, sum(widths))
-        ax.set_ylim(-0.9, 0.9)
-        ax.set_yticks([])  # hide y tick
+        ax.set_ylim(-1.0, 1.0)
+        ax.set_yticks([])
         ax.set_xticks(centers)
         ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
 
-        # Clean spines (keep bottom for tick labels)
+        # Clean frame (keep subtle bottom line for labels)
         for spine in ["top", "left", "right"]:
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_alpha(0.25)
