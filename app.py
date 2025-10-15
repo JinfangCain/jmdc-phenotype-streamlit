@@ -3,9 +3,11 @@ import io
 import json
 import os
 import pandas as pd
+import numpy as np
 import streamlit as st
 from huggingface_hub import hf_hub_download
 from predict_phenotype import JMDCPhenotype
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="Predictive T2D Risk Phenotype", 
@@ -15,18 +17,28 @@ st.set_page_config(
 # --- Button theming (affects all primary buttons) ---
 st.markdown("""
 <style>
-div.stButton > button[kind="primary"] {
+/* Primary buttons everywhere (including form submit) */
+button[kind="primary"],
+button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-primaryFormSubmit"],
+div.stButton > button,
+form button[type="submit"] {
     background: linear-gradient(90deg, #6b7280, #9ca3af) !important;
-    color: white !important;
-    border: none;
-    padding: 0.85rem 1.25rem;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 1.15rem;
-    letter-spacing: .3px;
-    transition: all 0.15s ease-in-out;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0.85rem 1.25rem !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 1.15rem !important;
+    letter-spacing: .3px !important;
+    transition: all 0.15s ease-in-out !important;
 }
-div.stButton > button[kind="primary"]:hover {
+
+button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover,
+button[data-testid="baseButton-primaryFormSubmit"]:hover,
+div.stButton > button:hover,
+form button[type="submit"]:hover {
     background: linear-gradient(90deg, #4b5563, #6b7280) !important;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0,0,0,0.15);
@@ -64,8 +76,29 @@ def load_model():
 model = load_model()
 feature_names = model.feature_names  # must be: ['Systolic_BP','Diastolic_BP','BMI','Triglycerides','HDL_Cholesterol','LDL_Cholesterol','AST(GOT)','ALT(GPT)','Gamma_GTP','eGFR','Age','Sex']
 
+# Try to fetch phenotype names and mean risks (defensive against different bundle keys)
+phenotype_names = getattr(model, "names_by_order", None)
+if phenotype_names is None and hasattr(model, "B"):
+    phenotype_names = model.B.get("phenotype_names_by_order", None)
+if phenotype_names is None:
+    phenotype_names = [f"P{i+1}" for i in range(7)]  # fallback
+
+mean_risks_by_order = None
+for k in [
+    "mean_risks_by_order",
+    "cluster_mean_risks_by_order",
+    "mean_cluster_risks_by_order",
+    "phenotype_mean_risks_by_order",
+]:
+    if hasattr(model, k):
+        mean_risks_by_order = getattr(model, k)
+        break
+    if hasattr(model, "B") and isinstance(model.B, dict) and k in model.B:
+        mean_risks_by_order = model.B[k]
+        break
+
 # ----------------------- Single patient form -----------------------
-st.subheader("Single patient")
+st.subheader("Your Risk Profile")
 
 # defaults (one decimal place)
 defaults = {
@@ -140,6 +173,51 @@ with st.form("single"):
         out = model.predict(ordered_vals)
         st.success(f"Phenotype: **{out['phenotype_name']}**")
         st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
+        # --- Phenotype bar: 7 segments with labels and average risks ---
+        # Identify the selected phenotype index (ordered label 0..6)
+        sel_idx = int(out.get("phenotype_ordered_label", 0))
+
+        names = phenotype_names
+        # If mean risks not found in the bundle, fall back to NaNs (will label as "N/A")
+        risks = np.array(mean_risks_by_order) if mean_risks_by_order is not None else np.array([np.nan]*len(names))
+
+        n = len(names)
+        widths = [1]*n  # equal-width segments
+        # color palette (distinct but calm)
+        palette = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
+        # Ensure we have n colors
+        if len(palette) < n:
+            from itertools import cycle, islice
+            palette = list(islice(cycle(palette), n))
+
+        # Alphas: highlight selected phenotype
+        alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
+
+        # Build stacked horizontal bar
+        fig, ax = plt.subplots(figsize=(10, 1.2))
+        left = 0
+        for i in range(n):
+            ax.barh(
+                y=0, width=widths[i], left=left,
+                color=palette[i], alpha=alphas[i], edgecolor="white", height=0.9
+            )
+            # Label text: name + mean risk (two decimals) or N/A
+            if np.isnan(risks[i]):
+                label = f"{names[i]}\nN/A"
+            else:
+                label = f"{names[i]}\n{risks[i]*100:.2f}%"
+            # Place centered in the segment
+            ax.text(
+                left + widths[i]/2, 0,
+                label, ha="center", va="center",
+                fontsize=10, color="white", weight="bold"
+            )
+            left += widths[i]
+
+        ax.set_xlim(0, sum(widths))
+        ax.set_ylim(-0.6, 0.6)
+        ax.axis("off")
+        st.pyplot(fig)
         with st.expander("Details"):
             st.json(out)
 
