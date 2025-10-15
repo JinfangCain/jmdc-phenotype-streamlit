@@ -178,39 +178,34 @@ with st.form("single"):
         sel_idx = int(out.get("phenotype_ordered_label", 0))
 
         names = phenotype_names
-        # If mean risks not found in the bundle, fall back to NaNs (will label as "N/A")
+        import numpy as np
         risks = np.array(mean_risks_by_order) if mean_risks_by_order is not None else np.array([np.nan]*len(names))
 
         n = len(names)
-        widths = [1]*n  # equal-width segments
-        # color palette (distinct but calm)
-        palette = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
-        # Ensure we have n colors
-        if len(palette) < n:
-            from itertools import cycle, islice
-            palette = list(islice(cycle(palette), n))
+        widths = [1]*n
+        from itertools import cycle, islice
+        palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
+        palette = list(islice(cycle(palette_base), n))
 
-        # Alphas: highlight selected phenotype
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
 
-        # Build stacked horizontal bar
-        fig, ax = plt.subplots(figsize=(10, 1.2))
+        fig, ax = plt.subplots(figsize=(9, 1.6))
         left = 0
         for i in range(n):
             ax.barh(
                 y=0, width=widths[i], left=left,
                 color=palette[i], alpha=alphas[i], edgecolor="white", height=0.9
             )
-            # Label text: name + mean risk (two decimals) or N/A
-            if np.isnan(risks[i]):
-                label = f"{names[i]}\nN/A"
-            else:
-                label = f"{names[i]}\n{risks[i]*100:.2f}%"
-            # Place centered in the segment
+            # Clean label: only phenotype name (and optional mean risk if available)
+            label = f"{names[i]}" if np.isnan(risks[i]) else f"{names[i]}\n{risks[i]*100:.2f}%"
             ax.text(
                 left + widths[i]/2, 0,
-                label, ha="center", va="center",
-                fontsize=10, color="white", weight="bold"
+                label,
+                ha="center", va="center",
+                fontsize=10.5,
+                color="white",
+                fontweight="bold",
+                linespacing=1.3,
             )
             left += widths[i]
 
