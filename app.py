@@ -88,23 +88,14 @@ if phenotype_names is None:
 
 # Ordered mean risks for each phenotype
 # Prefer the new key you provided: "cluster_mean_risks"
+# Pull average risk per ordered phenotype from the bundle
 ordered_mean_risks = None
-preferred_keys = [
-    "cluster_mean_risks",                # <-- your bundle
-    "mean_risks_by_order",
-    "cluster_mean_risks_by_order",
-    "mean_cluster_risks_by_order",
-    "phenotype_mean_risks_by_order",
-]
-for k in preferred_keys:
-    if hasattr(model, k):
-        ordered_mean_risks = getattr(model, k)
-        break
-    if hasattr(model, "B") and isinstance(model.B, dict) and k in model.B:
-        ordered_mean_risks = model.B[k]
-        break
-if ordered_mean_risks is None:
-    ordered_mean_risks = [np.nan] * len(phenotype_names)
+if hasattr(model, "cluster_mean_risks"):
+    ordered_mean_risks = np.array(getattr(model, "cluster_mean_risks"), dtype=float)
+elif hasattr(model, "B") and isinstance(model.B, dict) and "cluster_mean_risks" in model.B:
+    ordered_mean_risks = np.array(model.B["cluster_mean_risks"], dtype=float)
+else:
+    ordered_mean_risks = np.array([np.nan] * len(phenotype_names), dtype=float)  # fallback
 
 # ----------------------- Single patient form -----------------------
 st.subheader("Your Risk Profile")
@@ -185,45 +176,46 @@ with st.form("single"):
 
         # --- Phenotype bar (7 segments, show risks & names) ---
         sel_idx = int(out.get("phenotype_ordered_label", 0))
-        risks = np.array(ordered_mean_risks, dtype=float)
         names = phenotype_names
+        risks = ordered_mean_risks.astype(float)  # ensure numeric
 
         n = len(names)
         widths = [1] * n
+
         from itertools import cycle, islice
-
-        # Vibrant palette (we’ll only use the selected color from here)
         palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
-        palette = list(islice(cycle(palette_base), n))
+        colors = list(islice(cycle(palette_base), n))
 
-        # Colors: selected = vivid; others = light gray
-        selected_color = palette[sel_idx]
-        faded_bar_color = "#d1d5db"   # Tailwind gray-300
-        faded_text_color = "#111827"  # Tailwind gray-900 for contrast on gray
-        selected_text_color = "#ffffff"
+        # Alphas: selected full, others faded
+        alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
+        text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]  # fade text a bit too
 
         fig, ax = plt.subplots(figsize=(9, 2.6))
         left = 0.0
         centers = []
-        for i in range(n):
-            bar_color = selected_color if i == sel_idx else faded_bar_color
-            txt_color = selected_text_color if i == sel_idx else faded_text_color
 
+        # Optional: make text readable on any background (thin black stroke)
+        import matplotlib.patheffects as pe
+        stroke = [pe.withStroke(linewidth=2, foreground="black", alpha=0.5)]
+
+        for i in range(n):
             ax.barh(
                 y=0, width=widths[i], left=left,
-                color=bar_color, edgecolor="white", linewidth=1.0, height=0.9
+                color=colors[i], alpha=alphas[i],
+                edgecolor="white", linewidth=1.0, height=0.9
             )
             centers.append(left + widths[i] / 2.0)
 
-            # Mean risk inside every segment (always printed)
+            # Always print the mean risk inside each segment (two decimals)
             if not np.isnan(risks[i]):
                 ax.text(
                     left + widths[i] / 2.0, 0,
                     f"{risks[i]*100:.2f}%",
                     ha="center", va="center",
-                    fontsize=10, color=txt_color, weight="bold"
+                    fontsize=10, color="white",
+                    weight="bold", alpha=text_alphas[i],
+                    path_effects=stroke
                 )
-
             left += widths[i]
 
         # Phenotype names under the bar, rotated 45°
@@ -233,7 +225,7 @@ with st.form("single"):
         ax.set_xticks(centers)
         ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
 
-        # Clean frame (keep subtle bottom line for labels)
+        # Clean frame (keep subtle bottom axis for labels)
         for spine in ["top", "left", "right"]:
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_alpha(0.25)
