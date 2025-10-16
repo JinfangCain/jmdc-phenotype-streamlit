@@ -86,16 +86,22 @@ if phenotype_names is None and hasattr(model, "B"):
 if phenotype_names is None:
     phenotype_names = [f"P{i+1}" for i in range(7)]
 
-# Ordered mean risks for each phenotype
-# Prefer the new key you provided: "cluster_mean_risks"
-# Pull average risk per ordered phenotype from the bundle
-ordered_mean_risks = None
-if hasattr(model, "cluster_mean_risks"):
-    ordered_mean_risks = np.array(getattr(model, "cluster_mean_risks"), dtype=float)
-elif hasattr(model, "B") and isinstance(model.B, dict) and "cluster_mean_risks" in model.B:
-    ordered_mean_risks = np.array(model.B["cluster_mean_risks"], dtype=float)
+ordered_mean_risks = getattr(model, "cluster_mean_risks", None)
+if ordered_mean_risks is None and hasattr(model, "B"):
+    ordered_mean_risks = model.B.get("cluster_mean_risks", None)
+
+# normalize to numpy array of floats (or NaNs if missing)
+import numpy as np
+if ordered_mean_risks is not None:
+    ordered_mean_risks = np.asarray(ordered_mean_risks, dtype=float)
+    # length guard vs. names
+    k = len(phenotype_names)
+    if ordered_mean_risks.size != k:
+        fixed = np.full(k, np.nan, dtype=float)
+        fixed[:min(k, ordered_mean_risks.size)] = ordered_mean_risks[:min(k, ordered_mean_risks.size)]
+        ordered_mean_risks = fixed
 else:
-    ordered_mean_risks = np.array([np.nan] * len(phenotype_names), dtype=float)  # fallback
+    ordered_mean_risks = np.full(len(phenotype_names), np.nan, dtype=float)
 
 # ----------------------- Single patient form -----------------------
 st.subheader("Your Risk Profile")
@@ -186,17 +192,17 @@ with st.form("single"):
         palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
         colors = list(islice(cycle(palette_base), n))
 
-        # Alphas: selected full, others faded
+        # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
-        text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]  # fade text a bit too
+        text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
 
         fig, ax = plt.subplots(figsize=(9, 2.6))
         left = 0.0
         centers = []
 
-        # Optional: make text readable on any background (thin black stroke)
+        # thin black stroke to keep white text readable on any color
         import matplotlib.patheffects as pe
-        stroke = [pe.withStroke(linewidth=2, foreground="black", alpha=0.5)]
+        stroke = [pe.withStroke(linewidth=2, foreground="black", alpha=0.35)]
 
         for i in range(n):
             ax.barh(
