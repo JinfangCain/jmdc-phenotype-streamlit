@@ -37,6 +37,20 @@ class JMDCPhenotype:
         self.names_by_order = self.B["phenotype_names_by_order"]
         self.scaler = self.B["risk_scaler"]
         self.logit_model = self.B["risk_logistic"]
+        # Expected to be length-K, already ordered from lowest -> highest risk
+        risks = self.B.get("cluster_mean_risks", None)
+        if risks is None:
+            # keep a consistent attribute so the app can detect the absence
+            self.cluster_mean_risks = None
+        else:
+            risks = np.asarray(risks, dtype=float)
+            # Length guard: align with number of names if they differ
+            k_names = len(self.names_by_order) if isinstance(self.names_by_order, (list, tuple)) else len(risks)
+            if risks.size != k_names:
+                fixed = np.full(k_names, np.nan, dtype=float)
+                fixed[:min(k_names, risks.size)] = risks[:min(k_names, risks.size)]
+                risks = fixed
+            self.cluster_mean_risks = risks
 
     def _predict_logit(self, X_array: np.ndarray) -> np.ndarray:
         X_df = pd.DataFrame(X_array, columns=self.feature_names)
