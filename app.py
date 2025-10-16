@@ -298,21 +298,17 @@ with st.form("single"):
     }
 
     # Small badge row with native browser tooltips via title=""
-    badge_html = """
+    items_html = " ".join(
+    f'<span class="badge" title="{phenotype_glossary.get(nm, "Phenotype description")}">{nm}</span>'
+    for nm in phenotype_names)
+    st.markdown(f"""
     <style>
-    .badge {display:inline-block;margin:4px 6px;padding:4px 8px;border-radius:10px;
-            background:#f3f4f6;color:#111827;font-size:12px;border:1px solid #e5e7eb}
-    .badge:hover {background:#e5e7eb}
+    .badge {{display:inline-block;margin:4px 6px;padding:4px 8px;border-radius:10px;
+            background:#f3f4f6;color:#111827;font-size:12px;border:1px solid #e5e7eb}}
+    .badge:hover {{background:#e5e7eb}}
     </style>
-    <div>
-    {items}
-    </div>
-    """
-    items = []
-    for nm in phenotype_names:
-        tip = phenotype_glossary.get(nm, "Phenotype description")
-        items.append(f'<span class="badge" title="{tip}">{nm}</span>')
-    st.markdown(badge_html.format(items=" ".join(items)), unsafe_allow_html=True)
+    <div>{items_html}</div>
+    """, unsafe_allow_html=True)
 
 #with st.expander("Details"):
         #    st.json(out)
@@ -330,7 +326,7 @@ if uploaded:
     df = pd.read_csv(uploaded)
 
     # 1) Normalize header whitespace
-    original_cols = df.columns.tolist()
+    original_cols = df.columns.tolist()a
     df.columns = [c.strip() for c in df.columns]
 
     # 2) Accept either "GGT" or "Gamma_GTP" (case-insensitive)
