@@ -357,4 +357,21 @@ if uploaded:
             mime="text/csv",
         )
 
+# --- Provenance / disclaimer footer ---
+version = (getattr(model, "B", {}) or {}).get("version", "N/A")
+trained_date = (getattr(model, "B", {}) or {}).get("trained_date", "N/A")
+trained_on = (getattr(model, "B", {}) or {}).get("trained_on", "JMDC")
+
+st.markdown(
+    f"""
+<hr style="margin: 1.5rem 0; opacity:.25">
+<div style="font-size:12px; color:#4b5563;">
+  <strong>Model provenance.</strong>
+  Model derived from <em>{trained_on}</em> health checkup dataset (n=19,953, Japan).
+  Predictions represent statistical risk estimates and are <strong>not diagnostic</strong>.<br>
+  <strong>Bundle:</strong> {version} &nbsp;|&nbsp; <strong>Trained:</strong> {trained_date}
+</div>
+""",
+    unsafe_allow_html=True,
+)
 st.caption("⚠️ For research/education. Not a standalone diagnostic.")
