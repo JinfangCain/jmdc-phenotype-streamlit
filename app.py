@@ -244,9 +244,9 @@ with st.form("single"):
         for i in range(n):
             if not np.isnan(risks[i]):
                 ax.text(
-                    centers[i], 0, f"{risks[i]*100:.2f}%",
+                    centers[i], 0, f"{risks[i]*100:.1f}%",
                     ha="center", va="center",
-                    fontsize=10, color=colors[i], weight="bold",
+                    fontsize=10, color="black", weight="bold",
                     alpha=text_alphas[i], path_effects=stroke, zorder=5
                 )
 
