@@ -180,9 +180,6 @@ with st.form("single"):
         vals["BMI"] = bmi_calc  # ensure most recent auto-compute
         ordered_vals = {k: vals[k] for k in feature_names}
         out = model.predict(ordered_vals)
-
-        #st.success(f"Your phenotype: **{out['phenotype_name']}**")
-
         st.markdown(
             f"""
             <div style="
@@ -199,7 +196,7 @@ with st.form("single"):
             """,
             unsafe_allow_html=True
         )
-        st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
+        st.metric("Your estimated T2D risk:", f"{out['t2d_risk']*100:.1f}%")
 
         # --- Phenotype bar (7 segments, show risks & names) ---
         sel_idx = int(out.get("phenotype_ordered_label", 0))
@@ -287,8 +284,8 @@ with st.form("single"):
 
         st.pyplot(fig)
 
-        with st.expander("Details"):
-            st.json(out)
+        #with st.expander("Details"):
+        #    st.json(out)
 
 st.divider()
 
