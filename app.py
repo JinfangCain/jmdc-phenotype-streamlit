@@ -4,6 +4,9 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import cm
+import matplotlib.patheffects as pe
+import matplotlib.patches as patches
 import streamlit as st
 from huggingface_hub import hf_hub_download
 from predict_phenotype import JMDCPhenotype
@@ -189,16 +192,12 @@ with st.form("single"):
         n = len(names)
         widths = [1] * n
 
-        from matplotlib import cm
         cmap = cm.get_cmap("RdYlGn_r")           # green (low) → red (high)
-        colors = [cmap(x) for x in np.linspace(0, 1, n)]
+        colors = [cmap(x) for x in np.linspace(0.05, 0.9, n)]
 
         # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
         text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
-
-        import matplotlib.patheffects as pe
-        import matplotlib.patches as patches
 
         # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
@@ -259,7 +258,7 @@ with st.form("single"):
 
         # 5) Pointer triangle below the selected segment
         ax.plot(
-            centers[sel_idx], -0.72, marker="v",
+            centers[sel_idx], 0.62, marker="v",
             markersize=10, color=colors[sel_idx], alpha=1.0, zorder=6, clip_on=False
         )
 
