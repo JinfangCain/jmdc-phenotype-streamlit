@@ -286,33 +286,33 @@ with st.form("single"):
         st.pyplot(fig)
  
         # --- Phenotype glossary (hover for definitions) ---
-        # Short, reviewer-friendly one-liners. Edit as needed.
-        phenotype_glossary = {
-            "Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
-            "Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
-            "Older Low-BMI": "Older but lean; risk driven mainly by age.",
-            "Young Hepatic-Metabo": "Younger with hepatic enzymes/lipids suggestive of fatty-liver/metabolic stress.",
-            "Older Hepatic-Hypertensive": "Older with hepatic elevation and hypertension; high cardiometabolic risk.",
-            "Older Metabo": "Older with adverse lipid profile/obesity markers; insulin-resistance–like risk.",
-            "Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
-        }
+    # Short, reviewer-friendly one-liners. Edit as needed.
+    phenotype_glossary = {
+        "Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
+        "Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
+        "Older Low-BMI": "Older but lean; risk driven mainly by age.",
+        "Young Hepatic-Metabo": "Younger with hepatic enzymes/lipids suggestive of fatty-liver/metabolic stress.",
+        "Older Hepatic-Hypertensive": "Older with hepatic elevation and hypertension; high cardiometabolic risk.",
+        "Older Metabo": "Older with adverse lipid profile/obesity markers; insulin-resistance–like risk.",
+        "Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
+    }
 
-        # Small badge row with native browser tooltips via title=""
-        badge_html = """
-        <style>
-        .badge {display:inline-block;margin:4px 6px;padding:4px 8px;border-radius:10px;
-                background:#f3f4f6;color:#111827;font-size:12px;border:1px solid #e5e7eb}
-        .badge:hover {background:#e5e7eb}
-        </style>
-        <div>
-        {items}
-        </div>
-        """
-        items = []
-        for nm in phenotype_names:
-            tip = phenotype_glossary.get(nm, "Phenotype description")
-            items.append(f'<span class="badge" title="{tip}">{nm}</span>')
-        st.markdown(badge_html.format(items=" ".join(items)), unsafe_allow_html=True)
+    # Small badge row with native browser tooltips via title=""
+    badge_html = """
+    <style>
+    .badge {display:inline-block;margin:4px 6px;padding:4px 8px;border-radius:10px;
+            background:#f3f4f6;color:#111827;font-size:12px;border:1px solid #e5e7eb}
+    .badge:hover {background:#e5e7eb}
+    </style>
+    <div>
+    {items}
+    </div>
+    """
+    items = []
+    for nm in phenotype_names:
+        tip = phenotype_glossary.get(nm, "Phenotype description")
+        items.append(f'<span class="badge" title="{tip}">{nm}</span>')
+    st.markdown(badge_html.format(items=" ".join(items)), unsafe_allow_html=True)
 
 #with st.expander("Details"):
         #    st.json(out)
