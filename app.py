@@ -38,7 +38,7 @@ button[kind="primary"]:hover,
 button[data-testid="baseButton-primary"]:hover,
 button[data-testid="baseButton-primaryFormSubmit"]:hover,
 div.stButton > button:hover,
-form button[type="submit"] :hover{
+form button[type="submit"]:hover{
     background: linear-gradient(90deg, #4b5563, #6b7280) !important;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0,0,0,0.15);
@@ -63,8 +63,10 @@ HF_REPO_ID = st.secrets.get("HF_REPO_ID", "your-org/JMDC_LIME_PhenotypeModel")
 HF_FILENAME = st.secrets.get("HF_FILENAME", "JMDC_LIME_PhenotypeBundle_v1.joblib")
 LOCAL_MODEL_PATH = "JMDC_LIME_PhenotypeBundle_v1.joblib"
 
+# use mtime as a cache key so Streamlit reloads when the file changes
+bundle_mtime = os.path.getmtime(LOCAL_MODEL_PATH) if os.path.exists(LOCAL_MODEL_PATH) else 0.0
 @st.cache_resource(show_spinner="Loading phenotype model…")
-def load_model():
+def load_model(_mtime: float):
     if LOAD_FROM == "local":
         if not os.path.exists(LOCAL_MODEL_PATH):
             st.error(f"Local model not found: {LOCAL_MODEL_PATH}")
@@ -75,7 +77,7 @@ def load_model():
         bundle_path = hf_hub_download(repo_id=HF_REPO_ID, filename=HF_FILENAME, token=token)
     return JMDCPhenotype(bundle_path)
 
-model = load_model()
+model = load_model(bundle_mtime)
 feature_names = model.feature_names  # expected: ['Systolic_BP','Diastolic_BP','BMI','Triglycerides','HDL_Cholesterol','LDL_Cholesterol','AST(GOT)','ALT(GPT)','Gamma_GTP','eGFR','Age','Sex']
 
 # ----------------------------- Bundle metadata -----------------------------
@@ -91,7 +93,6 @@ if ordered_mean_risks is None and hasattr(model, "B"):
     ordered_mean_risks = model.B.get("cluster_mean_risks", None)
 
 # normalize to numpy array of floats (or NaNs if missing)
-import numpy as np
 if ordered_mean_risks is not None:
     ordered_mean_risks = np.asarray(ordered_mean_risks, dtype=float)
     # length guard vs. names
