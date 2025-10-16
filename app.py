@@ -192,8 +192,9 @@ with st.form("single"):
         n = len(names)
         widths = [1] * n
 
+        # colors of the phenotype segments
         cmap = cm.get_cmap("RdYlGn_r")           # green (low) → red (high)
-        colors = [cmap(x) for x in np.linspace(0.05, 0.9, n)]
+        colors = [cmap(x) for x in np.linspace(0.1, 0.8, n)]
 
         # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
