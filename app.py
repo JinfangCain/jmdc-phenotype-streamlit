@@ -182,6 +182,7 @@ with st.form("single"):
         out = model.predict(ordered_vals)
         st.markdown(
             f"""
+            Your phenotype: 
             <div style="
                 background-color:#d1fae5;
                 color:#065f46;
@@ -191,7 +192,7 @@ with st.form("single"):
                 font-weight:700;
                 text-align:center;
             ">
-                Your phenotype: {out['phenotype_name']}
+                {out['phenotype_name']}
             </div>
             """,
             unsafe_allow_html=True
