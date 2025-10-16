@@ -181,7 +181,24 @@ with st.form("single"):
         ordered_vals = {k: vals[k] for k in feature_names}
         out = model.predict(ordered_vals)
 
-        st.success(f"Phenotype: **{out['phenotype_name']}**")
+        #st.success(f"Your phenotype: **{out['phenotype_name']}**")
+
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#d1fae5;
+                color:#065f46;
+                padding:0.8em 1em;
+                border-radius:0.5em;
+                font-size:1.4rem;
+                font-weight:700;
+                text-align:center;
+            ">
+                Your phenotype: {out['phenotype_name']}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         st.metric("Estimated T2D risk", f"{out['t2d_risk']*100:.1f}%")
 
         # --- Phenotype bar (7 segments, show risks & names) ---
