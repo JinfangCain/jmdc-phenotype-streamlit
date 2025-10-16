@@ -281,8 +281,7 @@ with st.form("single"):
 
         st.pyplot(fig)
  
-        # --- Phenotype glossary (hover for definitions) ---
-    # Short, reviewer-friendly one-liners. Edit as needed.
+    # --- Phenotype glossary (hover for definitions) ---
     phenotype_glossary = {
         "Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
         "Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
@@ -293,15 +292,30 @@ with st.form("single"):
         "Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
     }
 
-    # Small badge row with native browser tooltips via title=""
     items_html = " ".join(
-    f'<span class="badge" title="{phenotype_glossary.get(nm, "Phenotype description")}">{nm}</span>'
-    for nm in phenotype_names)
+        f'<span class="badge" data-tip="{phenotype_glossary.get(nm, "Phenotype description")}">{nm}</span>'
+        for nm in phenotype_names
+    )
+
     st.markdown(f"""
     <style>
-    .badge {{display:inline-block;margin:4px 6px;padding:4px 8px;border-radius:10px;
-            background:#f3f4f6;color:#111827;font-size:12px;border:1px solid #e5e7eb}}
-    .badge:hover {{background:#e5e7eb}}
+    .badge {{
+    display:inline-block; margin:4px 6px; padding:4px 8px; border-radius:10px;
+    background:#f3f4f6; color:#111827; font-size:12px; border:1px solid #e5e7eb;
+    position:relative; cursor:help;
+    }}
+    .badge:hover {{ background:#e5e7eb; }}
+    .badge:hover::after {{
+    content: attr(data-tip);
+    position:absolute; left:50%; bottom:125%; transform: translateX(-50%);
+    background:#111827; color:#fff; padding:6px 8px; border-radius:6px;
+    white-space:nowrap; font-size:12px; line-height:1; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.15);
+    }}
+    .badge:hover::before {{
+    content:"";
+    position:absolute; left:50%; bottom:115%; transform:translateX(-50%);
+    border:6px solid transparent; border-top-color:#111827;
+    }}
     </style>
     <div>{items_html}</div>
     """, unsafe_allow_html=True)
