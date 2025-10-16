@@ -199,7 +199,7 @@ with st.form("single"):
         )
         st.metric("Your estimated T2D risk:", f"{out['t2d_risk']*100:.1f}%")
 
-        # --- Phenotype bar (7 segments, show risks & names) ---
+        """# --- Phenotype bar (7 segments, show risks & names) ---
         sel_idx = int(out.get("phenotype_ordered_label", 0))
         names = phenotype_names
         risks = ordered_mean_risks.astype(float)  # ensure numeric
@@ -279,7 +279,83 @@ with st.form("single"):
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_alpha(0.25)
 
-        st.pyplot(fig)
+        st.pyplot(fig)"""
+
+        # --- Phenotype bar (interactive with hover tooltips) ---
+        sel_idx = int(out.get("phenotype_ordered_label", 0))
+        names = phenotype_names
+        risks = ordered_mean_risks.astype(float)  # ensure numeric
+
+        n = len(names)
+
+        # Colors along a green→red continuum
+        cmap = cm.get_cmap("RdYlGn_r")
+        base_rgba = [cmap(x) for x in np.linspace(0.1, 0.8, n)]
+
+        # Fade non-selected by lowering alpha in the color itself (per-point opacity)
+        def rgba_str(rgba_tuple, alpha=1.0):
+            r, g, b, _ = rgba_tuple
+            return f"rgba({int(r*255)},{int(g*255)},{int(b*255)},{alpha})"
+
+        colors_rgba = [
+            rgba_str(base_rgba[i], 1.0 if i == sel_idx else 0.35)
+            for i in range(n)
+        ]
+
+        # Text labels inside bars (risk %); use black for readability (per your last change)
+        text_vals = [f"{risks[i]*100:.1f}%" if not np.isnan(risks[i]) else "" for i in range(n)]
+
+        # Hover text: name + definition + mean risk
+        phenotype_glossary = {
+            "Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
+            "Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
+            "Older Low-BMI": "Older but lean; risk driven mainly by age.",
+            "Young Hepatic-Metabo": "Younger with hepatic enzymes/lipids suggestive of fatty-liver/metabolic stress.",
+            "Older Hepatic-Hypertensive": "Older with hepatic elevation and hypertension; high cardiometabolic risk.",
+            "Older Metabo": "Older with adverse lipid profile/obesity markers; insulin-resistance–like risk.",
+            "Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
+        }
+        hover_text = [
+            f"<b>{names[i]}</b><br>{phenotype_glossary.get(names[i], 'Phenotype description')}<br>"
+            + (f"Mean risk: {risks[i]*100:.1f}%" if not np.isnan(risks[i]) else "")
+            for i in range(n)
+        ]
+
+        # Make a “single bar” look by drawing vertical bars that touch (bargap=0)
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    x=names, y=[1]*n,
+                    marker=dict(color=colors_rgba, line=dict(color="white", width=1)),
+                    text=text_vals, textposition="inside",
+                    textfont=dict(color="black", size=12),
+                    hovertext=hover_text, hoverinfo="text",
+                    cliponaxis=False
+                )
+            ]
+        )
+
+        # Pointer (triangle) above the selected phenotype
+        fig.add_annotation(
+            x=names[sel_idx], y=1.08, text="▲",
+            showarrow=False, font=dict(size=18, color=rgba_str(base_rgba[sel_idx], 1.0))
+        )
+
+        fig.update_layout(
+            height=220,
+            margin=dict(l=10, r=10, t=10, b=60),
+            bargap=0,  # bars touch, looks like one continuous bar
+            xaxis=dict(
+                tickangle=45,
+                tickfont=dict(size=11),
+                tickmode="array",
+                tickvals=names,
+                ticktext=names
+            ),
+            yaxis=dict(visible=False),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
  
     # --- Phenotype glossary (hover for definitions) ---
         phenotype_glossary = {
