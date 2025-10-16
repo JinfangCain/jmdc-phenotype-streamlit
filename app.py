@@ -189,9 +189,18 @@ with st.form("single"):
         n = len(names)
         widths = [1] * n
 
-        from itertools import cycle, islice
-        palette_base = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"]
-        colors = list(islice(cycle(palette_base), n))
+        from matplotlib import cm, colors as mcolors
+        cmap = cm.get_cmap("RdYlGn_r")  # low risk = green, high risk = red
+        colors = [cmap(x) for x in np.linspace(0, 1, n)]  # n=7 evenly spaced colors
+
+        # Helper: choose white/black text for readability based on luminance
+        def _best_text_color(rgba):
+            r, g, b, _ = rgba
+            # relative luminance
+            L = 0.2126*r + 0.7152*g + 0.0722*b
+            return "black" if L > 0.6 else "white"
+
+        text_colors = [_best_text_color(c) for c in colors]
 
         # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
@@ -217,9 +226,9 @@ with st.form("single"):
             if not np.isnan(risks[i]):
                 ax.text(
                     left + widths[i] / 2.0, 0,
-                    f"{risks[i]*100:.2f}%",
+                    f"{risks[i]*100:.2f}%" if not np.isnan(risks[i]) else "",
                     ha="center", va="center",
-                    fontsize=10, color="white",
+                    fontsize=10, color=text_colors[i],
                     weight="bold", alpha=text_alphas[i],
                     path_effects=stroke
                 )
