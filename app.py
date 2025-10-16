@@ -215,10 +215,6 @@ with st.form("single"):
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
         text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
 
-        # Fade *non-selected* with alpha (keep their own color)
-        alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
-        text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
-
         fig, ax = plt.subplots(figsize=(9, 2.8))
         lefts, centers = [], []
         left = 0.0
@@ -310,9 +306,6 @@ with st.form("single"):
     <div>{items_html}</div>
     """, unsafe_allow_html=True)
 
-#with st.expander("Details"):
-        #    st.json(out)
-
 st.divider()
 
 # ----------------------- Batch prediction -----------------------
@@ -326,7 +319,7 @@ if uploaded:
     df = pd.read_csv(uploaded)
 
     # 1) Normalize header whitespace
-    original_cols = df.columns.tolist()a
+    original_cols = df.columns.tolist()
     df.columns = [c.strip() for c in df.columns]
 
     # 2) Accept either "GGT" or "Gamma_GTP" (case-insensitive)
