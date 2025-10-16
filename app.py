@@ -189,59 +189,81 @@ with st.form("single"):
         n = len(names)
         widths = [1] * n
 
-        from matplotlib import cm, colors as mcolors
-        cmap = cm.get_cmap("RdYlGn_r")  # low risk = green, high risk = red
-        colors = [cmap(x) for x in np.linspace(0, 1, n)]  # n=7 evenly spaced colors
-
-        # Helper: choose white/black text for readability based on luminance
-        def _best_text_color(rgba):
-            r, g, b, _ = rgba
-            # relative luminance
-            L = 0.2126*r + 0.7152*g + 0.0722*b
-            return "black" if L > 0.6 else "white"
-
-        text_colors = [_best_text_color(c) for c in colors]
+        from matplotlib import cm
+        cmap = cm.get_cmap("RdYlGn_r")           # green (low) → red (high)
+        colors = [cmap(x) for x in np.linspace(0, 1, n)]
 
         # Fade *non-selected* with alpha (keep their own color)
         alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
         text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
 
-        fig, ax = plt.subplots(figsize=(9, 2.6))
-        left = 0.0
-        centers = []
-
-        # thin black stroke to keep white text readable on any color
         import matplotlib.patheffects as pe
-        stroke = [pe.withStroke(linewidth=2, foreground="black", alpha=0.35)]
+        import matplotlib.patches as patches
 
+        # Fade *non-selected* with alpha (keep their own color)
+        alphas = [1.0 if i == sel_idx else 0.35 for i in range(n)]
+        text_alphas = [1.0 if i == sel_idx else 0.6 for i in range(n)]
+
+        fig, ax = plt.subplots(figsize=(9, 2.8))
+        lefts, centers = [], []
+        left = 0.0
+
+        # stroke helps colored text stay readable on any background
+        stroke = [pe.withStroke(linewidth=2.2, foreground="white", alpha=0.9)]
+
+        # 1) Draw all base segments (uniform height)
+        base_height = 0.9
         for i in range(n):
             ax.barh(
                 y=0, width=widths[i], left=left,
                 color=colors[i], alpha=alphas[i],
-                edgecolor="white", linewidth=1.0, height=0.9
+                edgecolor="white", linewidth=1.0, height=base_height
             )
+            lefts.append(left)
             centers.append(left + widths[i] / 2.0)
-
-            # Always print the mean risk inside each segment (two decimals)
-            if not np.isnan(risks[i]):
-                ax.text(
-                    left + widths[i] / 2.0, 0,
-                    f"{risks[i]*100:.2f}%" if not np.isnan(risks[i]) else "",
-                    ha="center", va="center",
-                    fontsize=10, color=text_colors[i],
-                    weight="bold", alpha=text_alphas[i],
-                    path_effects=stroke
-                )
             left += widths[i]
 
-        # Phenotype names under the bar, rotated 45°
+        # 2) Re-draw the selected segment slightly taller with a bold outline
+        sel_left = lefts[sel_idx]
+        sel_width = widths[sel_idx]
+        ax.barh(
+            y=0, width=sel_width, left=sel_left,
+            color=colors[sel_idx], alpha=1.0,
+            edgecolor="white", linewidth=2.0, height=1.05, zorder=3
+        )
+        # add a colored outline around the selected segment
+        ax.add_patch(
+            patches.Rectangle(
+                (sel_left, -0.525),  # x, y (y is bottom)
+                sel_width, 1.05,     # width, height (match the taller bar)
+                fill=False, linewidth=2.5, edgecolor=colors[sel_idx], zorder=4
+            )
+        )
+
+        # 3) Risk % labels INSIDE each segment, colored the same as the segment
+        for i in range(n):
+            if not np.isnan(risks[i]):
+                ax.text(
+                    centers[i], 0, f"{risks[i]*100:.2f}%",
+                    ha="center", va="center",
+                    fontsize=10, color=colors[i], weight="bold",
+                    alpha=text_alphas[i], path_effects=stroke, zorder=5
+                )
+
+        # 4) Phenotype names UNDER the bar, rotated 45°
         ax.set_xlim(0, sum(widths))
         ax.set_ylim(-1.0, 1.0)
         ax.set_yticks([])
         ax.set_xticks(centers)
-        ax.set_xticklabels(names, rotation=45, ha="right", fontsize=9)
+        ax.set_xticklabels(phenotype_names, rotation=45, ha="right", fontsize=9)
 
-        # Clean frame (keep subtle bottom axis for labels)
+        # 5) Pointer triangle below the selected segment
+        ax.plot(
+            centers[sel_idx], -0.72, marker="v",
+            markersize=10, color=colors[sel_idx], alpha=1.0, zorder=6, clip_on=False
+        )
+
+        # Clean frame
         for spine in ["top", "left", "right"]:
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_alpha(0.25)
