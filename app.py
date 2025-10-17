@@ -49,7 +49,7 @@ form button[type="submit"]:hover{
 </style>
 """, unsafe_allow_html=True)
 
-"""# ----------------------------- Header copy -----------------------------
+# ----------------------------- Header copy -----------------------------
 st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive model.")
 
@@ -58,45 +58,6 @@ An **optimal machine learning model** was trained to predict Type 2 Diabetes (T2
 For each person, **LIME** quantified how every feature contributed to their predicted risk.  
 These contribution profiles were **clustered into seven predictive phenotypes**, then **ordered by mean predicted risk** to form a transparent risk spectrum.
 """)
-
-# --- Phenotype glossary (hover for definitions) ---
-phenotype_glossary = {
-"Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
-"Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
-"Older Low-BMI": "Older but lean; risk driven mainly by age.",
-"Young Hepatic-Metabo": "Younger with hepatic enzymes/lipids suggestive of fatty-liver/metabolic stress.",
-"Older Hepatic-Hypertensive": "Older with hepatic elevation and hypertension; high cardiometabolic risk.",
-"Older Metabo": "Older with adverse lipid profile/obesity markers; insulin-resistance–like risk.",
-"Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
-}
-
-items_html = " ".join(
-f'<span class="badge" data-tip="{phenotype_glossary.get(nm, "Phenotype description")}">{nm}</span>'
-for nm in phenotype_names
-)
-
-st.markdown(f"""
-<style>
-.badge {{
-display:inline-block; margin:4px 6px; padding:4px 8px; border-radius:10px;
-background:#f3f4f6; color:#111827; font-size:12px; border:1px solid #e5e7eb;
-position:relative; cursor:help;
-}}
-.badge:hover {{ background:#e5e7eb; }}
-.badge:hover::after {{
-content: attr(data-tip);
-position:absolute; left:50%; bottom:125%; transform: translateX(-50%);
-background:#111827; color:#fff; padding:6px 8px; border-radius:6px;
-white-space:nowrap; font-size:12px; line-height:1; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.15);
-}}
-.badge:hover::before {{
-content:"";
-position:absolute; left:50%; bottom:115%; transform:translateX(-50%);
-border:6px solid transparent; border-top-color:#111827;
-}}
-</style>
-<div>{items_html}</div>
-""", unsafe_allow_html=True)"""
 
 # ----------------------------- Model loading -----------------------------
 # Default to local bundle committed to the repo. Override with Secrets if using HF.
@@ -145,6 +106,46 @@ if ordered_mean_risks is not None:
         ordered_mean_risks = fixed
 else:
     ordered_mean_risks = np.full(len(phenotype_names), np.nan, dtype=float)
+
+# ----------------------------- Phenotype glossary (top, hover) -----------------------------
+phenotype_glossary = {
+    "Young Low-BMI": "Younger, lean profile; generally lowest metabolic burden.",
+    "Mid-Aged Low-BMI": "Middle-aged, lean; mildly rising risk with age.",
+    "Older Low-BMI": "Older but lean; risk driven mainly by age.",
+    "Young Hepatic-Metabo": "Younger with hepatic enzymes/lipids suggestive of fatty-liver/metabolic stress.",
+    "Older Hepatic-Hypertensive": "Older with hepatic elevation and hypertension; high cardiometabolic risk.",
+    "Older Metabo": "Older with adverse lipid profile/obesity markers; insulin-resistance–like risk.",
+    "Older Hepatic-Metabo": "Older with pronounced hepatic-metabolic abnormalities; highest observed risk."
+}
+
+items_html = " ".join(
+    f'<span class="badge" data-tip="{phenotype_glossary.get(nm, "Phenotype description")}">{nm}</span>'
+    for nm in phenotype_names
+)
+
+# Build HTML without f-string/format braces in CSS to avoid escaping issues
+badge_html = """
+<style>
+.badge {
+  display:inline-block; margin:4px 6px; padding:4px 8px; border-radius:10px;
+  background:#f3f4f6; color:#111827; font-size:12px; border:1px solid #e5e7eb;
+  position:relative; cursor:help;
+}
+.badge:hover { background:#e5e7eb; }
+.badge:hover::after {
+  content: attr(data-tip);
+  position:absolute; left:50%; bottom:125%; transform: translateX(-50%);
+  background:#111827; color:#fff; padding:6px 8px; border-radius:6px;
+  white-space:nowrap; font-size:12px; line-height:1; z-index:9999; box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.badge:hover::before {
+  content:"";
+  position:absolute; left:50%; bottom:115%; transform:translateX(-50%);
+  border:6px solid transparent; border-top-color:#111827;
+}
+</style>
+<div>""" + items_html + "</div>"
+st.markdown(badge_html, unsafe_allow_html=True)
 
 # ----------------------- Single patient form -----------------------
 st.subheader("Your Risk Profile")
@@ -319,7 +320,6 @@ with st.form("single"):
         ax.spines["bottom"].set_alpha(0.25)
 
         st.pyplot(fig)
-
 
 st.divider()
 
