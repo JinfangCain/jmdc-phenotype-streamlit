@@ -54,9 +54,9 @@ st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive model.")
 
 st.markdown("""
-An **optimal machine learning model** was trained to predict Type 2 Diabetes (T2D) risk using health-checkup data from **19,953** Japanese adults across **12 routine variables**.  
-For each person, **LIME** quantified how every feature contributed to their predicted risk.  
-These contribution profiles were **clustered into seven predictive phenotypes**, then **ordered by mean predicted risk** to form a transparent risk spectrum.
+An optimal machine learning model was trained to predict Type 2 Diabetes (T2D) risk using health-checkup data from 19,953 Japanese adults across 12 routine variables.  
+For each person, LIME quantified how every feature contributed to their predicted risk.  
+These contribution profiles were clustered into seven predictive phenotypes, then ordered by mean predicted risk to form a transparent risk spectrum.
 """)
 
 # ----------------------------- Model loading -----------------------------
