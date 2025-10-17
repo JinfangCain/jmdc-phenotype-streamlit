@@ -49,7 +49,7 @@ form button[type="submit"]:hover{
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------------- Header copy -----------------------------
+"""# ----------------------------- Header copy -----------------------------
 st.title("📊 Your T2D Risk Phenotype")
 st.caption("Predictive phenotypes using JMDC health checkup data based on LIME explanations of an optimal predictive model.")
 
@@ -96,7 +96,7 @@ border:6px solid transparent; border-top-color:#111827;
 }}
 </style>
 <div>{items_html}</div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True)"""
 
 # ----------------------------- Model loading -----------------------------
 # Default to local bundle committed to the repo. Override with Secrets if using HF.
@@ -238,7 +238,7 @@ with st.form("single"):
         )
         st.metric("Your estimated T2D risk:", f"{out['t2d_risk']*100:.1f}%")
 
-        """# --- Phenotype bar (7 segments, show risks & names) ---
+        # --- Phenotype bar (7 segments, show risks & names) ---
         sel_idx = int(out.get("phenotype_ordered_label", 0))
         names = phenotype_names
         risks = ordered_mean_risks.astype(float)  # ensure numeric
@@ -318,7 +318,7 @@ with st.form("single"):
             ax.spines[spine].set_visible(False)
         ax.spines["bottom"].set_alpha(0.25)
 
-        st.pyplot(fig)"""
+        st.pyplot(fig)
 
 
 st.divider()
